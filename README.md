@@ -32,46 +32,6 @@ Then, transform chats into chatbot logic: use your questions as triggers and AI 
 
 ## Demo
 
-Insert gif or link to demo
-🚀 Live Demo: weblave.netlify.app
-
-
-🔹 Screenshots:- 
-
-
-#  Weblave – Custom AI Chatbot Builder
-
-Weblave is a powerful platform to create, configure, and deploy AI-integrated chatbots into custom websites with ease. Whether you're looking to chat with your own PDFs, define triggers/responses manually, or embed a bot into your site without relying on third-party scripts — Weblave simplifies it all.
-
-🚀 Live Demo: weblave.netlify.app
-
-## Features
-
-🔹 Direct Chat
-
-•   Interact with AI using:
-
-•   Uploaded PDFs
-
-•   Command sets
-
-•   Website context inputs
-
-Then, transform chats into chatbot logic: use your questions as triggers and AI replies as responses — perfect for instantly building conversational bots.
-
-🔹 Chatbot Creator
-• Build bots manually with:
-
-• Custom triggers & responses
-
-• Welcome messages
-
-• Live chatbot preview
-
-• One-click embeddable code (no external dependencies)
-
-## Demo
-
 🚀 Live Demo: weblave.netlify.app
 
 
