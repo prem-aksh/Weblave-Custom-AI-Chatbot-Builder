@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_KEY = 'AIzaSyDM6ZvICUbvvZs4diVWBdFIpvHr6C_DC7A';
+const API_KEY = //provide your api key here;
 const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 // Maximum file size in bytes (20MB)
