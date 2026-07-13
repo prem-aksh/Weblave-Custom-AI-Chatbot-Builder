@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Bot, Plus, X, Copy, Check, Trash } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Plus, X, Copy, Check, Trash, Sparkles, MessageSquare } from 'lucide-react';
 import { ChatbotWidget } from '../components/ChatbotWidget';
 
 interface Command {
@@ -26,9 +26,29 @@ function ChatbotGenerator() {
   const [copied, setCopied] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showCode, setShowCode] = useState(false);
+  const [draftSaved, setDraftSaved] = useState(false);
+
+  useEffect(() => {
+    const savedDraft = localStorage.getItem('weblave-chatbot-draft');
+    if (!savedDraft) return;
+    try {
+      const parsed = JSON.parse(savedDraft) as { config: ChatbotConfig; useAI: boolean };
+      setConfig(parsed.config);
+      setUseAI(parsed.useAI);
+    } catch {
+      localStorage.removeItem('weblave-chatbot-draft');
+    }
+  }, []);
+
+  const saveDraft = () => {
+    localStorage.setItem('weblave-chatbot-draft', JSON.stringify({ config, useAI }));
+    if (config.apiKey) localStorage.setItem('weblave-gemini-api-key', config.apiKey);
+    setDraftSaved(true);
+    window.setTimeout(() => setDraftSaved(false), 2200);
+  };
 
   const handleAddCommand = () => {
-    if (newCommand.trigger && newCommand.response) {
+    if (newCommand.trigger.trim() && newCommand.response.trim()) {
       setConfig(prev => ({
         ...prev,
         commands: [...prev.commands, newCommand],
@@ -339,21 +359,52 @@ function ChatbotGenerator() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Chatbot Generator</h1>
+    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-b from-custom-lightest/30 to-white px-3 py-5 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-custom-lightest/60 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-custom-dark">
+            <Sparkles className="h-3.5 w-3.5" /> No-code builder
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight text-custom-dark">Build your chatbot</h1>
+          <p className="mt-1 max-w-xl text-sm text-slate-600">Create a focused assistant with simple commands, test it instantly, and copy the embed code.</p>
+        </div>
         <button
-          onClick={() => setIsCreating(true)}
-          className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          onClick={() => {
+            setConfig({ name: '', welcomeMessage: 'Hello! How can I help you today?', commands: [] });
+            setNewCommand({ trigger: '', response: '' });
+            setUseAI(false);
+            setIsCreating(true);
+          }}
+          className="flex items-center justify-center rounded-lg bg-custom-dark px-4 py-2.5 text-sm font-medium text-white transition hover:bg-custom-medium"
         >
-          <Plus className="w-5 h-5 mr-2" />
-          Create New Chatbot
+          <Plus className="mr-2 h-5 w-5" /> Create New Chatbot
         </button>
       </div>
 
+      <div className="grid gap-4 md:grid-cols-3">
+        {[
+          ['1', 'Add instructions', 'Define the phrases your chatbot should recognize.'],
+          ['2', 'Test the experience', 'Preview responses before sharing it.'],
+          ['3', 'Embed anywhere', 'Copy one script tag into your website.'],
+        ].map(([number, title, description]) => (
+          <div key={number} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-full bg-custom-lightest/60 text-sm font-bold text-custom-dark">{number}</div>
+            <h2 className="font-semibold text-slate-800">{title}</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-500">{description}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-dashed border-custom-medium/40 bg-white/70 p-8 text-center">
+        <MessageSquare className="mx-auto h-8 w-8 text-custom-medium" />
+        <h2 className="mt-3 text-lg font-semibold text-slate-800">Your chatbot workspace is ready</h2>
+        <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">Start with a welcome message and a few common questions. You can always refine the bot after previewing it.</p>
+      </div>
+
       {isCreating && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-custom-dark/60 p-3 sm:p-6">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl sm:p-8">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold">Create New Chatbot</h2>
               <button
@@ -396,6 +447,11 @@ function ChatbotGenerator() {
                   Commands
                 </label>
                 <div className="space-y-4">
+                  {config.commands.length === 0 && (
+                    <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-500">
+                      No commands yet. Add a trigger and its response below.
+                    </p>
+                  )}
                   {config.commands.map((cmd, index) => (
                     <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
                       <div className="flex-1">
@@ -415,19 +471,19 @@ function ChatbotGenerator() {
                       type="text"
                       value={newCommand.trigger}
                       onChange={(e) => setNewCommand(prev => ({ ...prev, trigger: e.target.value }))}
-                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full rounded-lg border border-slate-200 p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-custom-medium"
                       placeholder="Command trigger (e.g., 'pricing')"
                     />
                     <textarea
                       value={newCommand.response}
                       onChange={(e) => setNewCommand(prev => ({ ...prev, response: e.target.value }))}
-                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full rounded-lg border border-slate-200 p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-custom-medium"
                       placeholder="Response"
                       rows={3}
                     />
                     <button
                       onClick={handleAddCommand}
-                      className="w-full bg-gray-100 text-gray-700 py-2 rounded hover:bg-gray-200"
+                      className="w-full rounded-lg bg-slate-100 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-200"
                     >
                       Add Command
                     </button>
@@ -444,6 +500,7 @@ function ChatbotGenerator() {
                       setUseAI(e.target.checked);
                       if (!e.target.checked) {
                         setConfig(prev => ({ ...prev, apiKey: undefined }));
+                        localStorage.removeItem('weblave-gemini-api-key');
                       }
                     }}
                     className="rounded border-gray-300 text-blue-500 focus:ring-blue-500"
@@ -459,10 +516,11 @@ function ChatbotGenerator() {
                       </label>
                       <input
                         type="password"
-                        onChange={(e) => setConfig(prev => ({
-                          ...prev,
-                          apiKey: e.target.value,
-                        }))}
+                        onChange={(e) => {
+                          const nextApiKey = e.target.value;
+                          setConfig(prev => ({ ...prev, apiKey: nextApiKey }));
+                          if (nextApiKey) localStorage.setItem('weblave-gemini-api-key', nextApiKey);
+                        }}
                         className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Your Gemini API Key"
                       />
@@ -471,16 +529,24 @@ function ChatbotGenerator() {
                 )}
               </div>
 
-              <div className="flex justify-end space-x-4">
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button
+                  onClick={saveDraft}
+                  className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-custom-medium hover:text-custom-dark"
+                >
+                  {draftSaved ? 'Draft saved' : 'Save draft'}
+                </button>
                 <button
                   onClick={() => setShowPreview(true)}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                  className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-200"
+                  disabled={!config.name.trim()}
                 >
                   Preview Chatbot
                 </button>
                 <button
                   onClick={() => setShowCode(true)}
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                  className="rounded-lg bg-custom-dark px-4 py-2 text-sm font-medium text-white transition hover:bg-custom-medium disabled:opacity-40"
+                  disabled={!config.name.trim()}
                 >
                   View Code
                 </button>
@@ -538,6 +604,7 @@ function ChatbotGenerator() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
