@@ -3,7 +3,7 @@
 
 Weblave is a powerful platform to create, configure, and deploy AI-integrated chatbots into custom websites with ease. Whether you're looking to chat with your own PDFs, define triggers/responses manually, or embed a bot into your site without relying on third-party scripts — Weblave simplifies it all.
 
-🚀 Live Demo: https://weblave-custom-ai-chatbot-builder.vercel.app/chatbot-generator
+🚀 Live Demo: https://weblave-custom-ai-chatbot-builder.vercel.app
 
 ## Features
 
@@ -32,7 +32,7 @@ Then, transform chats into chatbot logic: use your questions as triggers and AI 
 
 ## Demo
 
-🚀 Live Demo: https://weblave-custom-ai-chatbot-builder.vercel.app/chatbot-generator
+🚀 Live Demo: https://weblave-custom-ai-chatbot-builder.vercel.app
 
 
 🔹 Screenshots:- 
