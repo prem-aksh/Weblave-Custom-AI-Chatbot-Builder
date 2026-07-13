@@ -42,8 +42,8 @@ export function AuthModal({ isOpen, onClose, mode }: AuthModalProps) {
         if (error) throw error;
       }
       onClose();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Unable to complete authentication.');
     } finally {
       setLoading(false);
     }

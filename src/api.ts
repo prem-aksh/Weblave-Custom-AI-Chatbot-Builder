@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-const API_KEY = //provide your api key here;
 const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 // Maximum file size in bytes (20MB)
@@ -10,8 +9,12 @@ const MAX_CONTENT_LENGTH = 30000;
 // Maximum base64 content length to send to API (leaving room for message)
 const MAX_BASE64_LENGTH = 25000;
 
-export async function sendMessage(message: string, pdfFile?: File | null) {
+export async function sendMessage(message: string, pdfFile?: File | null, apiKey?: string) {
   try {
+    if (!apiKey) {
+      throw new Error('A Gemini API key is required for AI responses.');
+    }
+
     let content = message;
     let systemPrompt = "Provide concise, direct responses. Keep answers brief and to the point.";
     
@@ -57,7 +60,7 @@ export async function sendMessage(message: string, pdfFile?: File | null) {
     let response;
     try {
       response = await axios.post(
-        `${API_URL}?key=${API_KEY}`,
+        `${API_URL}?key=${apiKey}`,
         {
           contents: [{
             parts: [{ text: content }]
@@ -75,17 +78,22 @@ export async function sendMessage(message: string, pdfFile?: File | null) {
           }
         }
       );
-    } catch (axiosError: any) {
-      if (axiosError.response) {
-        const status = axiosError.response.status;
-        const errorData = axiosError.response.data;
+    } catch (axiosError: unknown) {
+      const error = axiosError as {
+        response?: { status?: number; data?: { error?: { message?: string } } };
+        request?: unknown;
+        message?: string;
+      };
+      if (error.response) {
+        const status = error.response.status;
+        const errorData = error.response.data;
         
         if (status === 400) {
           throw new Error(`Invalid request: ${errorData.error?.message || 'Bad request format'}`);
         } else if (status === 401) {
           throw new Error('Invalid API key. Please check your credentials.');
         } else if (status === 429) {
-          throw new Error('API rate limit exceeded. Please try again in a few moments.');
+          throw new Error('Gemini quota is exhausted for the current key. Enter another Gemini key in Chatbot Generator and save the draft, then return here.');
         } else if (status === 413) {
           throw new Error('Content too large for the API. Please try a smaller message or PDF.');
         } else if (status >= 500) {
@@ -96,7 +104,7 @@ export async function sendMessage(message: string, pdfFile?: File | null) {
       } else if (axiosError.request) {
         throw new Error('Unable to reach the Gemini API. Please check your internet connection.');
       } else {
-        throw new Error(`Request failed: ${axiosError.message}`);
+          throw new Error(`Request failed: ${error.message}`);
       }
     }
 
@@ -116,13 +124,13 @@ export async function sendMessage(message: string, pdfFile?: File | null) {
 
     return responseText;
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const normalizedError = error instanceof Error ? error : new Error('An unexpected error occurred. Please try again.');
     console.error('Error details:', {
-      message: error.message,
-      stack: error.stack,
-      response: error.response?.data
+      message: normalizedError.message,
+      stack: normalizedError.stack,
     });
     
-    throw new Error(error.message || 'An unexpected error occurred. Please try again.');
+    throw normalizedError;
   }
 }

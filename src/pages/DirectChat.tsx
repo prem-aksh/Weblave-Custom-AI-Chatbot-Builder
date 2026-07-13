@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Send, Upload, Loader2, FileText, X, Bot, Copy, Check } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Send, Upload, Loader2, FileText, X, Bot, Copy, Check, Trash2 } from 'lucide-react';
 import { ChatMessage } from '../components/ChatMessage';
 import { sendMessage } from '../api';
 import { ChatbotWidget } from '../components/ChatbotWidget';
@@ -27,6 +27,10 @@ function DirectChat() {
     apiKey: '',
   });
 
+  useEffect(() => {
+    chatContainerRef.current?.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' });
+  }, [state.messages, state.loading]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
@@ -47,7 +51,8 @@ function DirectChat() {
     setInput('');
 
     try {
-      const response = await sendMessage(input, state.currentPdf);
+      const savedApiKey = localStorage.getItem('weblave-gemini-api-key') || undefined;
+      const response = await sendMessage(input, state.currentPdf, savedApiKey);
       
       setState(prev => ({
         ...prev,
@@ -58,11 +63,11 @@ function DirectChat() {
         }],
         loading: false
       }));
-    } catch (error) {
+    } catch (error: unknown) {
       setState(prev => ({
         ...prev,
         loading: false,
-        error: 'Failed to get response. Please try again.'
+        error: error instanceof Error ? error.message : 'Unable to get a response. Please check your Gemini API key.'
       }));
     }
   };
@@ -71,8 +76,17 @@ function DirectChat() {
     const file = e.target.files?.[0];
     if (file && file.type === 'application/pdf') {
       setState(prev => ({ ...prev, currentPdf: file }));
+    } else if (file) {
+      setState(prev => ({ ...prev, error: 'Please choose a PDF file.' }));
     }
   };
+
+  const clearChat = () => {
+    setState({ messages: [], loading: false, error: null, currentPdf: null });
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handlePrompt = (prompt: string) => setInput(prompt);
 
   const removePdf = () => {
     setState(prev => ({ ...prev, currentPdf: null }));
@@ -395,19 +409,16 @@ function DirectChat() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4">
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="p-4 bg-gray-800 text-white flex items-center justify-between">
-          <h1 className="text-xl font-semibold">Weblave - Direct Command</h1>
-          <button
-            onClick={handleCreateChatbot}
-            className="flex items-center px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-            disabled={state.messages.length === 0}
-          >
-            <Bot className="w-4 h-4 mr-2" />
-            Create Chatbot
-          </button>
+    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-b from-[#f2fbfc] to-white px-3 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#4f7c82]">AI workbench</p><h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#0b2e33]">Direct Chat</h1><p className="mt-1 text-sm text-slate-500">Ask anything, analyze a PDF, or turn a useful answer into a chatbot.</p></div>
+        <div className="flex gap-2">
+          <button onClick={clearChat} disabled={state.messages.length === 0} className="flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-red-200 hover:text-red-600 disabled:opacity-40"><Trash2 className="mr-2 h-4 w-4" /> Clear</button>
+          <button onClick={handleCreateChatbot} className="flex items-center rounded-lg bg-[#0b2e33] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#4f7c82] disabled:opacity-40" disabled={state.messages.length === 0}><Bot className="mr-2 h-4 w-4" /> Create chatbot</button>
         </div>
+      </div>
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-[#0b2e33]/5">
         
         <div className="flex">
           <div className="flex-1">
@@ -415,6 +426,16 @@ function DirectChat() {
               ref={chatContainerRef}
               className="h-[calc(100vh-240px)] overflow-y-auto p-4"
             >
+              {state.messages.length === 0 && (
+                <div className="flex h-full min-h-[360px] flex-col items-center justify-center px-4 text-center">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-100 text-[#0b2e33]"><Bot className="h-7 w-7" /></div>
+                  <h2 className="mt-5 text-xl font-semibold text-slate-800">What can I help you solve?</h2>
+                  <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">Start with a prompt below or upload a PDF to ask focused questions about it.</p>
+                  <div className="mt-6 flex flex-wrap justify-center gap-2">
+                    {['Explain a complex idea', 'Summarize this PDF', 'Give me a project plan'].map(prompt => <button key={prompt} onClick={() => handlePrompt(prompt)} className="rounded-full border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-[#0b2e33]">{prompt}</button>)}
+                  </div>
+                </div>
+              )}
               {state.messages.map((message, index) => (
                 <ChatMessage key={index} message={message} />
               ))}
@@ -432,7 +453,7 @@ function DirectChat() {
               )}
             </div>
 
-            <form onSubmit={handleSubmit} className="p-4 border-t">
+            <form onSubmit={handleSubmit} className="border-t border-slate-100 bg-slate-50/70 p-4 sm:p-5">
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -447,13 +468,13 @@ function DirectChat() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Type your message..."
-                  className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-300"
                 />
                 
                 <button
                   type="submit"
                   disabled={state.loading || !input.trim()}
-                  className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="rounded-lg bg-[#0b2e33] p-2.5 text-white transition-colors hover:bg-[#4f7c82] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Send className="w-6 h-6" />
                 </button>
@@ -485,6 +506,7 @@ function DirectChat() {
             </div>
           )}
         </div>
+      </div>
       </div>
 
       <input

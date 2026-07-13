@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User as UserIcon } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import type { User } from '@supabase/supabase-js';
 
 interface ProfileDropdownProps {
-  user: any;
+  user: User | null;
   onLogin: () => void;
   onSignup: () => void;
 }
@@ -39,7 +40,7 @@ export function ProfileDropdown({ user, onLogin, onSignup }: ProfileDropdownProp
             {user.user_metadata?.name?.[0]?.toUpperCase() || 'A'}
           </span>
         ) : (
-          <User className="w-5 h-5" />
+          <UserIcon className="w-5 h-5" />
         )}
       </button>
 

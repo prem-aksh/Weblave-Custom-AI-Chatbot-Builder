@@ -57,7 +57,7 @@ export function ChatbotWidget({ name, welcomeMessage, commands, apiKey, onClose 
         response = command.response;
       } else if (apiKey) {
         // Use the same sendMessage function from direct chat
-        response = await sendMessage(input);
+        response = await sendMessage(input, null, apiKey);
       } else {
         response = "I'm sorry, I don't understand that command.";
       }
@@ -67,7 +67,7 @@ export function ChatbotWidget({ name, welcomeMessage, commands, apiKey, onClose 
         isUser: false,
         timestamp: Date.now()
       }]);
-    } catch (error) {
+    } catch {
       setMessages(prev => [...prev, {
         content: "I'm sorry, I encountered an error. Please try again.",
         isUser: false,
